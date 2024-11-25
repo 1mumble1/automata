@@ -268,7 +268,7 @@ void ConvertToMoore(const std::string& inFileName, const std::string& outFileNam
 	// states for moore
 	for (int i = 0; i < statesForMoore.size(); i++)
 	{
-		moore.states.push_back(std::make_pair("R" + std::to_string(i), statesForMoore[i].second));
+		moore.states.push_back(std::make_pair("q" + std::to_string(i), statesForMoore[i].second));
 	}
 
 	// entries for moore
