@@ -164,7 +164,7 @@ void WriteMoore(const std::string& outFileName, Moore moore)
 	}
 }
 
-std::vector<std::pair<std::string, std::string>> ExtractMooreStates(const std::vector<std::vector<std::pair<std::string, std::string>>>& mealyTransitions)
+std::vector<std::pair<std::string, std::string>> ExtractMooreStates(const std::vector<std::vector<std::pair<std::string, std::string>>>& mealyTransitions, const std::string& startState)
 {
 	std::set<std::pair<std::string, std::string>> statesForMoore;
 	for (const auto& transitionForOneEntry : mealyTransitions)
@@ -176,9 +176,19 @@ std::vector<std::pair<std::string, std::string>> ExtractMooreStates(const std::v
 	}
 
 	std::vector<std::pair<std::string, std::string>> statesForMooreVector;
+	bool containsStartState = false;
 	for (const auto& state : statesForMoore)
 	{
 		statesForMooreVector.push_back(state);
+		if (state.first == startState)
+		{
+			containsStartState = true;
+		}
+	}
+
+	if (!containsStartState)
+	{
+		statesForMooreVector.insert(statesForMooreVector.begin(), std::make_pair(startState, ""));
 	}
 
 	return statesForMooreVector;
@@ -254,7 +264,7 @@ void ConvertToMoore(const std::string& inFileName, const std::string& outFileNam
 	ReadMealy(inFileName, mealy);
 	Moore moore;
 
-	std::vector<std::pair<std::string, std::string>> statesForMoore = ExtractMooreStates(mealy.transitions);
+	std::vector<std::pair<std::string, std::string>> statesForMoore = ExtractMooreStates(mealy.transitions, mealy.states[0]);
 
 	std::unordered_set<std::string> reachableStates = FindReachableStates(mealy);
 	std::vector<std::pair<std::string, std::string>> filteredStatesForMoore;
