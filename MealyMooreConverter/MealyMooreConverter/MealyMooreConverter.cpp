@@ -6,7 +6,6 @@
 #include <set>
 #include <unordered_set>
 #include <queue>
-#include "MealyMooreConverter.h"
 
 const std::string CONVERSION_TYPE_MEALY_TO_MOORE = "mealy-to-moore";
 const std::string CONVERSION_TYPE_MOORE_TO_MEALY = "moore-to-mealy";
