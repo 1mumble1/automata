@@ -6,6 +6,7 @@
 #include <set>
 #include <unordered_set>
 #include <queue>
+#include "MealyMooreConverter.h"
 
 const std::string CONVERSION_TYPE_MEALY_TO_MOORE = "mealy-to-moore";
 const std::string CONVERSION_TYPE_MOORE_TO_MEALY = "moore-to-mealy";
@@ -166,6 +167,7 @@ void WriteMoore(const std::string& outFileName, Moore moore)
 
 std::vector<std::pair<std::string, std::string>> ExtractMooreStates(const std::vector<std::vector<std::pair<std::string, std::string>>>& mealyTransitions, const std::string& startState)
 {
+
 	std::set<std::pair<std::string, std::string>> statesForMoore;
 	for (const auto& transitionForOneEntry : mealyTransitions)
 	{
@@ -373,6 +375,11 @@ void ConvertToMealy(const std::string& inFileName, const std::string& outFileNam
 	WriteMealy(outFileName, mealy);
 }
 
+void WriteBadRequest(const std::string& msg)
+{
+	std::cout << msg << std::endl;
+}
+
 int main(int argc, char* argv[])
 {
 	if (argc != 4)
@@ -387,6 +394,8 @@ int main(int argc, char* argv[])
 
 	(convType == CONVERSION_TYPE_MEALY_TO_MOORE) ?
 		ConvertToMoore(inputFileName, outputFileName) :
-		ConvertToMealy(inputFileName, outputFileName);
+		((convType == CONVERSION_TYPE_MOORE_TO_MEALY) ?
+			ConvertToMealy(inputFileName, outputFileName) :
+			WriteBadRequest("Invalid type of conversion"));
 	return 0;
 }
