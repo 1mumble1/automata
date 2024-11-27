@@ -73,10 +73,10 @@ void WriteMealy(const std::string& outFileName, Mealy mealy)
 	}
 	output << std::endl;
 
-	for (int i = 0; i < mealy.transitions.size(); i++)
+	for (size_t i = 0; i < mealy.transitions.size(); i++)
 	{
 		output << mealy.entries[i] << ";";
-		for (int j = 0; j < mealy.transitions[i].size(); j++)
+		for (size_t j = 0; j < mealy.transitions[i].size(); j++)
 		{
 			output << mealy.transitions[i][j].first
 				<< "/" << mealy.transitions[i][j].second;
@@ -149,10 +149,10 @@ void WriteMoore(const std::string& outFileName, Moore moore)
 	}
 	output << std::endl;
 
-	for (int i = 0; i < moore.transitions.size(); i++)
+	for (size_t i = 0; i < moore.transitions.size(); i++)
 	{
 		output << moore.entries[i] << ";";
-		for (int j = 0; j < moore.transitions[i].size(); j++)
+		for (size_t j = 0; j < moore.transitions[i].size(); j++)
 		{
 			output << moore.transitions[i][j];
 			if (j != moore.transitions[i].size() - 1)
@@ -194,7 +194,7 @@ std::vector<std::pair<std::string, std::string>> ExtractMooreStates(const std::v
 	return statesForMooreVector;
 }
 
-std::unordered_set<int> FindReachableStates(const Mealy& mealy)
+std::unordered_set<size_t> FindReachableStates(const Mealy& mealy)
 {
 	std::unordered_set<std::string> reachableStates;
 	std::queue<std::string> queue;
@@ -206,11 +206,11 @@ std::unordered_set<int> FindReachableStates(const Mealy& mealy)
 		std::string currentState = queue.front();
 		queue.pop();
 
-		for (int i = 0; i < mealy.states.size(); i++)
+		for (size_t i = 0; i < mealy.states.size(); i++)
 		{
 			if (currentState == mealy.states[i])
 			{
-				for (int j = 0; j < mealy.entries.size(); j++)
+				for (size_t j = 0; j < mealy.entries.size(); j++)
 				{
 					if (!reachableStates.count(mealy.transitions[j][i].first))
 					{
@@ -223,10 +223,10 @@ std::unordered_set<int> FindReachableStates(const Mealy& mealy)
 		}
 	}
 
-	std::unordered_set<int> reachableStatesIndexes;
+	std::unordered_set<size_t> reachableStatesIndexes;
 	for (const auto& reachableState : reachableStates)
 	{
-		for (int i = 0; i < mealy.states.size(); i++)
+		for (size_t i = 0; i < mealy.states.size(); i++)
 		{
 			if (reachableState == mealy.states[i])
 			{
@@ -239,7 +239,7 @@ std::unordered_set<int> FindReachableStates(const Mealy& mealy)
 	return reachableStatesIndexes;
 }
 
-std::unordered_set<int> FindReachableStates(const Moore& moore)
+std::unordered_set<size_t> FindReachableStates(const Moore& moore)
 {
 	std::unordered_set<std::string> reachableStates;
 	std::queue<std::string> queue;
@@ -251,11 +251,11 @@ std::unordered_set<int> FindReachableStates(const Moore& moore)
 		std::string currentState = queue.front();
 		queue.pop();
 
-		for (int i = 0; i < moore.states.size(); i++)
+		for (size_t i = 0; i < moore.states.size(); i++)
 		{
 			if (currentState == moore.states[i].first)
 			{
-				for (int j = 0; j < moore.entries.size(); j++)
+				for (size_t j = 0; j < moore.entries.size(); j++)
 				{
 					if (!reachableStates.count(moore.transitions[j][i]))
 					{
@@ -268,10 +268,10 @@ std::unordered_set<int> FindReachableStates(const Moore& moore)
 		}
 	}
 
-	std::unordered_set<int> reachableStatesIndexes;
+	std::unordered_set<size_t> reachableStatesIndexes;
 	for (const auto& reachableState : reachableStates)
 	{
-		for (int i = 0; i < moore.states.size(); i++)
+		for (size_t i = 0; i < moore.states.size(); i++)
 		{
 			if (reachableState == moore.states[i].first)
 			{
@@ -290,14 +290,14 @@ void ConvertToMoore(const std::string& inFileName, const std::string& outFileNam
 	ReadMealy(inFileName, mealy);
 	Moore moore;
 
-	std::unordered_set<int> reachableStates = FindReachableStates(mealy);
+	std::unordered_set<size_t> reachableStates = FindReachableStates(mealy);
 	Mealy filteredMealy;
 	filteredMealy.entries = mealy.entries;
 	filteredMealy.transitions = std::vector<std::vector<std::pair<std::string, std::string>>>(filteredMealy.entries.size());
 	for (const auto& index : reachableStates)
 	{
 		filteredMealy.states.push_back(mealy.states[index]);
-		for (int i = 0; i < filteredMealy.entries.size(); i++)
+		for (size_t i = 0; i < filteredMealy.entries.size(); i++)
 		{
 			filteredMealy.transitions[i].push_back(mealy.transitions[i][index]);
 		}
@@ -306,7 +306,7 @@ void ConvertToMoore(const std::string& inFileName, const std::string& outFileNam
 	auto statesForMoore = ExtractMooreStates(filteredMealy.transitions, filteredMealy.states[0]);
 
 	// states for moore
-	for (int i = 0; i < statesForMoore.size(); i++)
+	for (size_t i = 0; i < statesForMoore.size(); i++)
 	{
 		moore.states.push_back(std::make_pair("q" + std::to_string(i), statesForMoore[i].second));
 	}
@@ -318,11 +318,11 @@ void ConvertToMoore(const std::string& inFileName, const std::string& outFileNam
 	std::vector<std::vector<std::string>> transitionsMoore(filteredMealy.transitions.size(),
 		std::vector<std::string>(filteredMealy.transitions[0].size()));
 
-	for (int i = 0; i < filteredMealy.transitions.size(); i++)
+	for (size_t i = 0; i < filteredMealy.transitions.size(); i++)
 	{
-		for (int j = 0; j < filteredMealy.transitions[0].size(); j++)
+		for (size_t j = 0; j < filteredMealy.transitions[0].size(); j++)
 		{
-			int k = 0;
+			size_t k = 0;
 			auto transition = filteredMealy.transitions[i][j];
 
 			for (const auto& state : statesForMoore)
@@ -339,11 +339,11 @@ void ConvertToMoore(const std::string& inFileName, const std::string& outFileNam
 	std::vector<std::vector<std::string>> transitions(filteredMealy.transitions.size(),
 		std::vector<std::string>(statesForMoore.size()));
 
-	for (int i = 0; i < moore.states.size(); i++)
+	for (size_t i = 0; i < moore.states.size(); i++)
 	{
-		for (int j = 0; j < moore.entries.size(); j++)
+		for (size_t j = 0; j < moore.entries.size(); j++)
 		{
-			for (int k = 0; k < filteredMealy.states.size(); k++)
+			for (size_t k = 0; k < filteredMealy.states.size(); k++)
 			{
 				if (statesForMoore[i].first == filteredMealy.states[k])
 				{
@@ -364,14 +364,14 @@ void ConvertToMealy(const std::string& inFileName, const std::string& outFileNam
 	ReadMoore(inFileName, moore);
 	Mealy mealy;
 
-	std::unordered_set<int> reachableStates = FindReachableStates(moore);
+	std::unordered_set<size_t> reachableStates = FindReachableStates(moore);
 	Moore filteredMoore;
 	filteredMoore.entries = moore.entries;
 	filteredMoore.transitions = std::vector<std::vector<std::string>>(filteredMoore.entries.size());
 	for (const auto& index : reachableStates)
 	{
 		filteredMoore.states.push_back(moore.states[index]);
-		for (int i = 0; i < filteredMoore.entries.size(); i++)
+		for (size_t i = 0; i < filteredMoore.entries.size(); i++)
 		{
 			filteredMoore.transitions[i].push_back(moore.transitions[i][index]);
 		}
