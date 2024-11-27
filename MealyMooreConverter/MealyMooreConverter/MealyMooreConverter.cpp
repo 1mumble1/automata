@@ -76,7 +76,7 @@ void WriteMealy(const std::string& outFileName, Mealy mealy)
 	for (int i = 0; i < mealy.transitions.size(); i++)
 	{
 		output << mealy.entries[i] << ";";
-		for (int j = 0; j < mealy.transitions[i].size(); j++)
+		for (int j = 0; j < mealy.states.size(); j++)
 		{
 			output << mealy.transitions[i][j].first
 				<< "/" << mealy.transitions[i][j].second;
@@ -152,7 +152,7 @@ void WriteMoore(const std::string& outFileName, Moore moore)
 	for (int i = 0; i < moore.transitions.size(); i++)
 	{
 		output << moore.entries[i] << ";";
-		for (int j = 0; j < moore.states.size(); j++)
+		for (int j = 0; j < moore.transitions[i].size(); j++)
 		{
 			output << moore.transitions[i][j];
 			if (j != moore.transitions[i].size() - 1)
