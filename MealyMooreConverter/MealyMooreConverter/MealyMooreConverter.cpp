@@ -1,428 +1,446 @@
-﻿#include <fstream>
-#include <iostream>
+﻿#include <iostream>
 #include <vector>
-#include <string>
+#include <fstream>
 #include <sstream>
-#include <set>
 #include <unordered_set>
 #include <queue>
 
-const std::string CONVERSION_TYPE_MEALY_TO_MOORE = "mealy-to-moore";
-const std::string CONVERSION_TYPE_MOORE_TO_MEALY = "moore-to-mealy";
+using namespace std;
+
+const string CONVERSION_TYPE_MEALY_TO_MOORE = "mealy-to-moore";
+const string CONVERSION_TYPE_MOORE_TO_MEALY = "moore-to-mealy";
+const char DELIMETER = ';';
+const char SLASH = '/';
+const string CHAR_STATE_FOR_MOORE = "q";
+
+struct MealyTransition
+{
+	string state;
+	string out;
+
+	bool operator==(const MealyTransition& other) const
+	{
+		return state == other.state && out == other.out;
+	}
+};
+
+namespace std
+{
+	template <>
+	struct hash<MealyTransition>
+	{
+		size_t operator()(const MealyTransition& transition) const
+		{
+			// Создаем хеш, комбинируя хеши строк state и out
+			return hash<string>()(transition.state) ^ (hash<string>()(transition.out) << 1);
+		}
+	};
+}
+struct MealyStateWithTransitions
+{
+	string currentState;
+	vector<MealyTransition> transitions;
+};
 
 struct Mealy
 {
-	std::vector<std::string> states;
-	std::vector<std::string> entries;
-	std::vector<std::vector<std::pair<std::string, std::string>>> transitions;
+	vector<string> entries;
+	vector<MealyStateWithTransitions> statesWithTransitions;
+};
+
+struct MooreStateWithTransitions
+{
+	string currentState;
+	string out;
+	vector<string> transitions;
 };
 
 struct Moore
 {
-	std::vector<std::pair<std::string, std::string>> states;
-	std::vector<std::string> entries;
-	std::vector<std::vector<std::string>> transitions;
+	vector<string> entries;
+	vector<MooreStateWithTransitions> statesWithTransitions;
 };
 
-void ReadMealy(const std::string& inFileName, Mealy& mealy)
+Mealy ReadMealy(const string& inFileName)
 {
-	std::ifstream input(inFileName);
+	Mealy mealy;
 
-	// чтение состояний
-	std::string line;
-	std::getline(input, line);
-	std::stringstream ss(line);
-	std::string state;
-	std::getline(ss, state, ';');
-
-	while (std::getline(ss, state, ';'))
+	// reading states of mealy
+	ifstream input(inFileName);
+	string line;
+	getline(input, line);
+	istringstream ss(line);
+	string state;
+	getline(ss, state, DELIMETER);
+	while (getline(ss, state, DELIMETER))
 	{
-		mealy.states.push_back(state);
+		mealy.statesWithTransitions.push_back({ state, vector<MealyTransition>() });
 	}
 
-	while (std::getline(input, line))
+	// reading entries and transitions of mealy
+	while (getline(input, line))
 	{
-		// чтение входных сигналов
-		std::stringstream ss(line);
-		std::string entry;
-		std::getline(ss, entry, ';');
+		// reading entries of mealy
+		stringstream ss1(line);
+		string entry;
+		getline(ss1, entry, DELIMETER);
 		mealy.entries.push_back(entry);
 
-		// чтение переходов
-		std::string transition;
-		std::vector<std::pair<std::string, std::string>> transitions;
-		for (const auto& state : mealy.states)
+		// reading transitions of mealy
+		size_t i = 0;
+		string transition;
+		while (getline(ss1, transition, DELIMETER))
 		{
-			std::getline(ss, transition, ';');
-			size_t pos = transition.find('/');
+			size_t pos = transition.find(SLASH);
 			std::string transitionState = transition.substr(0, pos);
 			std::string transitionOut = transition.substr(pos + 1, transition.size());
-			transitions.push_back(std::make_pair(transitionState, transitionOut));
+			mealy.statesWithTransitions[i].transitions.push_back({ transitionState, transitionOut });
+			i++;
 		}
-		mealy.transitions.push_back(transitions);
 	}
+
+	return mealy;
 }
 
-void WriteMealy(const std::string& outFileName, Mealy mealy)
+void WriteMealy(const string& outFileName, const Mealy& mealy)
 {
-	std::ofstream output(outFileName);
+	ofstream output(outFileName);
 
-	for (const auto& state : mealy.states)
+	// writing states of mealy
+	for (const auto& state : mealy.statesWithTransitions)
 	{
-		output << ";" << state;
+		output << DELIMETER << state.currentState;
 	}
-	output << std::endl;
+	output << endl;
 
-	for (size_t i = 0; i < mealy.transitions.size(); i++)
+	// writing entries and transitions of mealy
+	for (size_t i = 0; i < mealy.entries.size(); i++)
 	{
-		output << mealy.entries[i] << ";";
-		for (size_t j = 0; j < mealy.transitions[i].size(); j++)
+		// writing entry
+		output << mealy.entries[i] << DELIMETER;
+
+		// writing transitions
+		for (size_t j = 0; j < mealy.statesWithTransitions.size(); j++)
 		{
-			output << mealy.transitions[i][j].first
-				<< "/" << mealy.transitions[i][j].second;
-			if (j != mealy.transitions[i].size() - 1)
+			output << mealy.statesWithTransitions[j].transitions[i].state << SLASH << mealy.statesWithTransitions[j].transitions[i].out;
+			if (j != mealy.statesWithTransitions.size() - 1)
 			{
-				output << ";";
+				output << DELIMETER;
 			}
 		}
-		output << std::endl;
+		output << endl;
 	}
 }
 
-void ReadMoore(const std::string& inFileName, Moore& moore)
+Moore ReadMoore(const string& inFileName)
 {
-	std::ifstream input(inFileName);
+	Moore moore;
 
-	// чтение состояний
-	std::string outString;
-	std::string stateString;
+	ifstream input(inFileName);
 
-	std::getline(input, outString);
-	std::getline(input, stateString);
+	// reading output signals of moore
+	string outs;
+	getline(input, outs);
+	istringstream outSs(outs);
+	string out;
+	getline(outSs, out, DELIMETER);
 
-	std::stringstream ssOut(outString);
-	std::stringstream ssState(stateString);
+	// reading states of moore
+	string states;
+	getline(input, states);
+	istringstream stateSs(states);
+	string state;
+	getline(stateSs, state, DELIMETER);
 
-	std::string out;
-	std::getline(ssOut, out, ';');
-	std::string state;
-	std::getline(ssState, state, ';');
-
-	while (std::getline(ssOut, out, ';') && std::getline(ssState, state, ';'))
+	// pushing the outs and states
+	while (getline(outSs, out, DELIMETER) && getline(stateSs, state, DELIMETER))
 	{
-		moore.states.push_back(std::make_pair(state, out));
+		moore.statesWithTransitions.push_back({ state, out, vector<string>() });
 	}
 
-	std::string line;
-	while (std::getline(input, line))
+	// reading transition of moore
+	string line;
+	while (getline(input, line))
 	{
-		// чтение входных сигналов
-		std::stringstream ss(line);
-		std::string entry;
-		std::getline(ss, entry, ';');
+		// reading entries of mealy
+		stringstream ss(line);
+		string entry;
+		getline(ss, entry, DELIMETER);
 		moore.entries.push_back(entry);
 
-		// чтение переходов
-		std::string transition;
-		std::vector<std::string> transitions;
-		for (const auto& state : moore.states)
+		// reading transitions of mealy
+		size_t i = 0;
+		string transition;
+		while (getline(ss, transition, DELIMETER))
 		{
-			std::getline(ss, transition, ';');
-			transitions.push_back(transition);
+			moore.statesWithTransitions[i].transitions.push_back(transition);
+			i++;
 		}
-		moore.transitions.push_back(transitions);
 	}
+
+	return moore;
 }
 
-void WriteMoore(const std::string& outFileName, Moore moore)
+void WriteMoore(const string& outFileName, const Moore& moore)
 {
-	std::ofstream output(outFileName);
+	ofstream output(outFileName);
 
-	for (const auto& state : moore.states)
+	// writing output signals of moore
+	for (const auto& stateWithTransition : moore.statesWithTransitions)
 	{
-		output << ";" << state.second;
+		output << DELIMETER << stateWithTransition.out;
 	}
-	output << std::endl;
-	for (const auto& state : moore.states)
-	{
-		output << ";" << state.first;
-	}
-	output << std::endl;
+	output << endl;
 
-	for (size_t i = 0; i < moore.transitions.size(); i++)
+	// writing states of moore
+	for (const auto& stateWithTransition : moore.statesWithTransitions)
 	{
-		output << moore.entries[i] << ";";
-		for (size_t j = 0; j < moore.transitions[i].size(); j++)
+		output << DELIMETER << stateWithTransition.currentState;
+	}
+	output << endl;
+
+	// writing transitions of moore
+	for (size_t i = 0; i < moore.entries.size(); i++)
+	{
+		// writing entry
+		output << moore.entries[i] << DELIMETER;
+
+		// writing transitions
+		for (size_t j = 0; j < moore.statesWithTransitions.size(); j++)
 		{
-			output << moore.transitions[i][j];
-			if (j != moore.transitions[i].size() - 1)
+			output << moore.statesWithTransitions[j].transitions[i];
+			if (j != moore.statesWithTransitions.size() - 1)
 			{
-				output << ";";
+				output << DELIMETER;
 			}
 		}
-		output << std::endl;
+		output << endl;
 	}
 }
 
-std::vector<std::pair<std::string, std::string>> ExtractMooreStates(const std::vector<std::vector<std::pair<std::string, std::string>>>& mealyTransitions, const std::string& startState)
+Mealy DeleteUnreachableStates(const Mealy& mealy)
 {
-	std::set<std::pair<std::string, std::string>> statesForMoore;
-	for (const auto& transitionForOneEntry : mealyTransitions)
+	Mealy mealyWithoutUnreachableStates;
+	mealyWithoutUnreachableStates.entries = mealy.entries;
+
+	unordered_set<string> reachableStates;
+	queue<string> queue;
+	queue.push(mealy.statesWithTransitions[0].currentState);
+	reachableStates.insert(mealy.statesWithTransitions[0].currentState);
+
+	while (!queue.empty())
 	{
-		for (const auto& transition : transitionForOneEntry)
+		string currentState = queue.front();
+		queue.pop();
+
+		for (size_t i = 0; i < mealy.statesWithTransitions.size(); i++)
+		{
+			if (currentState == mealy.statesWithTransitions[i].currentState)
+			{
+				for (size_t j = 0; j < mealy.statesWithTransitions[i].transitions.size(); j++)
+				{
+					if (!reachableStates.count(mealy.statesWithTransitions[i].transitions[j].state))
+					{
+						queue.push(mealy.statesWithTransitions[i].transitions[j].state);
+						reachableStates.insert(mealy.statesWithTransitions[i].transitions[j].state);
+					}
+				}
+				break;
+			}
+		}
+	}
+
+	for (const auto& reachableState : reachableStates)
+	{
+		for (size_t i = 0; i < mealy.statesWithTransitions.size(); i++)
+		{
+			if (reachableState == mealy.statesWithTransitions[i].currentState)
+			{
+				mealyWithoutUnreachableStates.statesWithTransitions.push_back(mealy.statesWithTransitions[i]);
+				break;
+			}
+		}
+	}
+
+	return mealyWithoutUnreachableStates;
+}
+
+Moore DeleteUnreachableStates(const Moore& moore)
+{
+	Moore mooreWithoutUnreachableStates;
+	mooreWithoutUnreachableStates.entries = moore.entries;
+
+	unordered_set<string> reachableStates;
+	queue<string> queue;
+	queue.push(moore.statesWithTransitions[0].currentState);
+	reachableStates.insert(moore.statesWithTransitions[0].currentState);
+
+	while (!queue.empty())
+	{
+		string currentState = queue.front();
+		queue.pop();
+
+		for (size_t i = 0; i < moore.statesWithTransitions.size(); i++)
+		{
+			if (currentState == moore.statesWithTransitions[i].currentState)
+			{
+				for (size_t j = 0; j < moore.statesWithTransitions[i].transitions.size(); j++)
+				{
+					if (!reachableStates.count(moore.statesWithTransitions[i].transitions[j]))
+					{
+						queue.push(moore.statesWithTransitions[i].transitions[j]);
+						reachableStates.insert(moore.statesWithTransitions[i].transitions[j]);
+					}
+				}
+				break;
+			}
+		}
+	}
+
+	for (const auto& reachableState : reachableStates)
+	{
+		for (size_t i = 0; i < moore.statesWithTransitions.size(); i++)
+		{
+			if (reachableState == moore.statesWithTransitions[i].currentState)
+			{
+				mooreWithoutUnreachableStates.statesWithTransitions.push_back(moore.statesWithTransitions[i]);
+				break;
+			}
+		}
+	}
+
+	return mooreWithoutUnreachableStates;
+}
+
+Moore Convert(const Mealy& mealy)
+{
+	Moore result;
+	Mealy mealyWithoutUnreachableStates = DeleteUnreachableStates(mealy);
+
+	// extracting states for moore
+	std::unordered_set<MealyTransition> statesForMoore;
+	for (const auto& stateWithTransitions : mealyWithoutUnreachableStates.statesWithTransitions)
+	{
+		for (const auto& transition : stateWithTransitions.transitions)
 		{
 			statesForMoore.insert(transition);
 		}
 	}
 
-	std::vector<std::pair<std::string, std::string>> statesForMooreVector;
-	bool containsStartState = false;
+	// checking if start state is missing
+	bool hasStartState = false;
 	for (const auto& state : statesForMoore)
 	{
-		statesForMooreVector.push_back(state);
-		if (state.first == startState)
+		if (state.state == mealyWithoutUnreachableStates.statesWithTransitions[0].currentState)
 		{
-			containsStartState = true;
+			hasStartState = true;
 		}
 	}
-
-	if (!containsStartState)
+	if (!hasStartState)
 	{
-		statesForMooreVector.insert(statesForMooreVector.begin(), std::make_pair(startState, ""));
+		statesForMoore.insert(MealyTransition{ mealyWithoutUnreachableStates.statesWithTransitions[0].currentState, "" });
 	}
 
-	return statesForMooreVector;
-}
+	// coping moore entries
+	result.entries = mealyWithoutUnreachableStates.entries;
 
-std::unordered_set<size_t> FindReachableStates(const Mealy& mealy)
-{
-	std::unordered_set<std::string> reachableStates;
-	std::queue<std::string> queue;
-	queue.push(mealy.states[0]);
-	reachableStates.insert(mealy.states[0]);
-
-	while (!queue.empty())
+	// paste moore states and outs, also coping states in vector
+	size_t i = 0;
+	vector<MealyTransition> statesForMooreVec;
+	for (const auto& state : statesForMoore)
 	{
-		std::string currentState = queue.front();
-		queue.pop();
+		result.statesWithTransitions.push_back({ CHAR_STATE_FOR_MOORE + to_string(i), state.out, vector<string>(result.entries.size()) });
+		statesForMooreVec.push_back(state);
+		i++;
+	}
 
-		for (size_t i = 0; i < mealy.states.size(); i++)
+	// paste transition for moore
+	for (size_t i = 0; i < statesForMooreVec.size(); i++)
+	{
+		for (size_t j = 0; j < mealy.statesWithTransitions.size(); j++)
 		{
-			if (currentState == mealy.states[i])
+			if (statesForMooreVec[i].state == mealy.statesWithTransitions[j].currentState)
 			{
-				for (size_t j = 0; j < mealy.entries.size(); j++)
+				for (size_t k = 0; k < mealy.statesWithTransitions[j].transitions.size(); k++)
 				{
-					if (!reachableStates.count(mealy.transitions[j][i].first))
+					for (size_t p = 0; p < statesForMooreVec.size(); p++)
 					{
-						queue.push(mealy.transitions[j][i].first);
-						reachableStates.insert(mealy.transitions[j][i].first);
+						if (statesForMooreVec[p] == mealy.statesWithTransitions[j].transitions[k])
+						{
+							result.statesWithTransitions[i].transitions[k] = result.statesWithTransitions[p].currentState;
+							break;
+						}
 					}
 				}
-				break;
 			}
 		}
 	}
 
-	std::unordered_set<size_t> reachableStatesIndexes;
-	for (const auto& reachableState : reachableStates)
-	{
-		for (size_t i = 0; i < mealy.states.size(); i++)
-		{
-			if (reachableState == mealy.states[i])
-			{
-				reachableStatesIndexes.insert(i);
-				break;
-			}
-		}
-	}
-
-	return reachableStatesIndexes;
+	return result;
 }
 
-std::unordered_set<size_t> FindReachableStates(const Moore& moore)
+Mealy Convert(const Moore& moore)
 {
-	std::unordered_set<std::string> reachableStates;
-	std::queue<std::string> queue;
-	queue.push(moore.states[0].first);
-	reachableStates.insert(moore.states[0].first);
+	Mealy result;
+	Moore mooreWithoutUnreachableStates = DeleteUnreachableStates(moore);
 
-	while (!queue.empty())
+	// coping entries
+	result.entries = mooreWithoutUnreachableStates.entries;
+
+	// paste mealy states
+	for (const auto& stateWithTransition : mooreWithoutUnreachableStates.statesWithTransitions)
 	{
-		std::string currentState = queue.front();
-		queue.pop();
+		result.statesWithTransitions.push_back({ stateWithTransition.currentState, vector<MealyTransition>(result.entries.size()) });
+	}
 
-		for (size_t i = 0; i < moore.states.size(); i++)
+	// paste mealy transitions
+	for (size_t i = 0; i < mooreWithoutUnreachableStates.statesWithTransitions.size(); i++)
+	{
+		for (const auto& transition : mooreWithoutUnreachableStates.statesWithTransitions[i].transitions)
 		{
-			if (currentState == moore.states[i].first)
+			for (const auto& state : mooreWithoutUnreachableStates.statesWithTransitions)
 			{
-				for (size_t j = 0; j < moore.entries.size(); j++)
+				if (state.currentState == transition)
 				{
-					if (!reachableStates.count(moore.transitions[j][i]))
-					{
-						queue.push(moore.transitions[j][i]);
-						reachableStates.insert(moore.transitions[j][i]);
-					}
+					result.statesWithTransitions[i].transitions.push_back({ state.currentState, state.out });
 				}
-				break;
 			}
 		}
 	}
 
-	std::unordered_set<size_t> reachableStatesIndexes;
-	for (const auto& reachableState : reachableStates)
-	{
-		for (size_t i = 0; i < moore.states.size(); i++)
-		{
-			if (reachableState == moore.states[i].first)
-			{
-				reachableStatesIndexes.insert(i);
-				break;
-			}
-		}
-	}
-
-	return reachableStatesIndexes;
+	return result;
 }
 
-void ConvertToMoore(const std::string& inFileName, const std::string& outFileName)
+void ConvertToMoore(const string& inFileName, const string& outFileName)
 {
-	Mealy mealy;
-	ReadMealy(inFileName, mealy);
-	Moore moore;
-
-	std::unordered_set<size_t> reachableStates = FindReachableStates(mealy);
-	Mealy filteredMealy;
-	filteredMealy.entries = mealy.entries;
-	filteredMealy.transitions = std::vector<std::vector<std::pair<std::string, std::string>>>(filteredMealy.entries.size());
-	for (const auto& index : reachableStates)
-	{
-		filteredMealy.states.push_back(mealy.states[index]);
-		for (size_t i = 0; i < filteredMealy.entries.size(); i++)
-		{
-			filteredMealy.transitions[i].push_back(mealy.transitions[i][index]);
-		}
-	}
-
-	auto statesForMoore = ExtractMooreStates(filteredMealy.transitions, filteredMealy.states[0]);
-
-	// states for moore
-	for (size_t i = 0; i < statesForMoore.size(); i++)
-	{
-		moore.states.push_back(std::make_pair("q" + std::to_string(i), statesForMoore[i].second));
-	}
-
-	// entries for moore
-	moore.entries = filteredMealy.entries;
-
-	// transitions for moore
-	std::vector<std::vector<std::string>> transitionsMoore(filteredMealy.transitions.size(),
-		std::vector<std::string>(filteredMealy.transitions[0].size()));
-
-	for (size_t i = 0; i < filteredMealy.transitions.size(); i++)
-	{
-		for (size_t j = 0; j < filteredMealy.transitions[0].size(); j++)
-		{
-			size_t k = 0;
-			auto transition = filteredMealy.transitions[i][j];
-
-			for (const auto& state : statesForMoore)
-			{
-				if (transition == state)
-				{
-					transitionsMoore[i][j] = moore.states[k].first;
-				}
-				k++;
-			}
-		}
-	}
-
-	std::vector<std::vector<std::string>> transitions(filteredMealy.transitions.size(),
-		std::vector<std::string>(statesForMoore.size()));
-
-	for (size_t i = 0; i < moore.states.size(); i++)
-	{
-		for (size_t j = 0; j < moore.entries.size(); j++)
-		{
-			for (size_t k = 0; k < filteredMealy.states.size(); k++)
-			{
-				if (statesForMoore[i].first == filteredMealy.states[k])
-				{
-					transitions[j][i] = transitionsMoore[j][k];
-				}
-			}
-		}
-	}
-
-	moore.transitions = transitions;
-
+	Mealy mealy = ReadMealy(inFileName);
+	Moore moore = Convert(mealy);
 	WriteMoore(outFileName, moore);
 }
 
-void ConvertToMealy(const std::string& inFileName, const std::string& outFileName)
+void ConvertToMealy(const string& inFileName, const string& outFileName)
 {
-	Moore moore;
-	ReadMoore(inFileName, moore);
-	Mealy mealy;
-
-	std::unordered_set<size_t> reachableStates = FindReachableStates(moore);
-	Moore filteredMoore;
-	filteredMoore.entries = moore.entries;
-	filteredMoore.transitions = std::vector<std::vector<std::string>>(filteredMoore.entries.size());
-	for (const auto& index : reachableStates)
-	{
-		filteredMoore.states.push_back(moore.states[index]);
-		for (size_t i = 0; i < filteredMoore.entries.size(); i++)
-		{
-			filteredMoore.transitions[i].push_back(moore.transitions[i][index]);
-		}
-	}
-
-	for (const auto& state : filteredMoore.states)
-	{
-		mealy.states.push_back(state.first);
-	}
-
-	for (const auto& entry : filteredMoore.entries)
-	{
-		mealy.entries.push_back(entry);
-	}
-
-	for (size_t i = 0; i < filteredMoore.transitions.size(); i++)
-	{
-		std::vector<std::pair<std::string, std::string>> transitionForOneEntry;
-		for (size_t j = 0; j < filteredMoore.transitions[i].size(); j++)
-		{
-			for (const auto& state : filteredMoore.states)
-			{
-				if (state.first == filteredMoore.transitions[i][j])
-				{
-					transitionForOneEntry.push_back(std::make_pair(state.first, state.second));
-					break;
-				}
-			}
-		}
-		mealy.transitions.push_back(transitionForOneEntry);
-	}
-
+	Moore moore = ReadMoore(inFileName);
+	Mealy mealy = Convert(moore);
 	WriteMealy(outFileName, mealy);
 }
 
-void WriteBadRequest(const std::string& msg)
+void WriteBadRequest(const string& message)
 {
-	std::cout << msg << std::endl;
+	cout << message << endl;
 }
 
 int main(int argc, char* argv[])
 {
 	if (argc != 4)
 	{
-		std::cout << "Usage: " << argv[0] << " <conversion-type> <input.csv> <output.csv>" << std::endl;
+		cout << "Usage: " << argv[0] << " <conversion-type> <input.csv> <output.csv>" << endl;
 		return 1;
 	}
 
-	std::string convType = argv[1];
-	std::string inputFileName = argv[2];
-	std::string outputFileName = argv[3];
+	string convType = argv[1];
+	string inputFileName = argv[2];
+	string outputFileName = argv[3];
 
 	(convType == CONVERSION_TYPE_MEALY_TO_MOORE) ?
 		ConvertToMoore(inputFileName, outputFileName) :
