@@ -6,6 +6,7 @@
 #include <set>
 #include <unordered_set>
 #include <queue>
+#include <unordered_map>
 
 const std::string CONVERSION_TYPE_MEALY_TO_MOORE = "mealy-to-moore";
 const std::string CONVERSION_TYPE_MOORE_TO_MEALY = "moore-to-mealy";
@@ -358,53 +359,93 @@ void ConvertToMoore(const std::string& inFileName, const std::string& outFileNam
 	WriteMoore(outFileName, moore);
 }
 
+std::vector<std::string> split(const std::string& s, char delimiter) {
+	std::vector<std::string> tokens;
+	std::string token;
+	std::istringstream tokenStream(s);
+	while (std::getline(tokenStream, token, delimiter)) {
+		tokens.push_back(token);
+	}
+	return tokens;
+}
+
 void ConvertToMealy(const std::string& inFileName, const std::string& outFileName)
 {
-	Moore moore;
-	ReadMoore(inFileName, moore);
-	Mealy mealy;
+	//Moore moore;
+	//ReadMoore(inFileName, moore);
+	//Mealy mealy;
 
-	std::unordered_set<size_t> reachableStates = FindReachableStates(moore);
-	Moore filteredMoore;
-	filteredMoore.entries = moore.entries;
-	filteredMoore.transitions = std::vector<std::vector<std::string>>(filteredMoore.entries.size());
-	for (const auto& index : reachableStates)
+	//std::unordered_set<size_t> reachableStates = FindReachableStates(moore);
+	//Moore filteredMoore;
+	//filteredMoore.entries = moore.entries;
+	//filteredMoore.transitions = std::vector<std::vector<std::string>>(filteredMoore.entries.size());
+	//for (const auto& index : reachableStates)
+	//{
+	//	filteredMoore.states.push_back(moore.states[index]);
+	//	for (size_t i = 0; i < filteredMoore.entries.size(); i++)
+	//	{
+	//		filteredMoore.transitions[i].push_back(moore.transitions[i][index]);
+	//	}
+	//}
+
+	//for (const auto& state : filteredMoore.states)
+	//{
+	//	mealy.states.push_back(state.first);
+	//}
+
+	//for (const auto& entry : filteredMoore.entries)
+	//{
+	//	mealy.entries.push_back(entry);
+	//}
+
+	//for (size_t i = 0; i < filteredMoore.transitions.size(); i++)
+	//{
+	//	std::vector<std::pair<std::string, std::string>> transitionForOneEntry;
+	//	for (size_t j = 0; j < filteredMoore.transitions[i].size(); j++)
+	//	{
+	//		for (const auto& state : filteredMoore.states)
+	//		{
+	//			if (state.first == filteredMoore.transitions[i][j])
+	//			{
+	//				transitionForOneEntry.push_back(std::make_pair(state.first, state.second));
+	//				break;
+	//			}
+	//		}
+	//	}
+	//	mealy.transitions.push_back(transitionForOneEntry);
+	//}
+
+	//WriteMealy(outFileName, mealy);
+	std::ifstream file(inFileName);
+	std::ofstream outFile(outFileName);
+	std::string line;
+	std::getline(file, line);
+	std::vector<std::string> tempRowOut = split(line, ';');
+	std::getline(file, line);
+	std::vector<std::string> tempRowStates = split(line, ';');
+
+
+	std::unordered_map<std::string, std::string> stateToOut;
+
+	for (size_t i = 1; i < tempRowOut.size(); ++i)
 	{
-		filteredMoore.states.push_back(moore.states[index]);
-		for (size_t i = 0; i < filteredMoore.entries.size(); i++)
+		stateToOut[tempRowStates[i]] = tempRowOut[i]; // выходной символ соответсвующий состоянию
+		outFile << ";" << tempRowStates[i];
+	}
+	outFile << "\n";
+
+	while (std::getline(file, line))
+	{
+		std::vector<std::string> rowNextSt = split(line, ';');
+		outFile << rowNextSt[0] << ";";
+		for (int i = 1; i < rowNextSt.size(); i++)
 		{
-			filteredMoore.transitions[i].push_back(moore.transitions[i][index]);
+			outFile << rowNextSt[i] << "/" << stateToOut[rowNextSt[i]] << ";";
 		}
+		outFile << "\n";
 	}
-
-	for (const auto& state : filteredMoore.states)
-	{
-		mealy.states.push_back(state.first);
-	}
-
-	for (const auto& entry : filteredMoore.entries)
-	{
-		mealy.entries.push_back(entry);
-	}
-
-	for (size_t i = 0; i < filteredMoore.transitions.size(); i++)
-	{
-		std::vector<std::pair<std::string, std::string>> transitionForOneEntry;
-		for (size_t j = 0; j < filteredMoore.transitions[i].size(); j++)
-		{
-			for (const auto& state : filteredMoore.states)
-			{
-				if (state.first == filteredMoore.transitions[i][j])
-				{
-					transitionForOneEntry.push_back(std::make_pair(state.first, state.second));
-					break;
-				}
-			}
-		}
-		mealy.transitions.push_back(transitionForOneEntry);
-	}
-
-	WriteMealy(outFileName, mealy);
+	file.close();
+	outFile.close();
 }
 
 void WriteBadRequest(const std::string& msg)
