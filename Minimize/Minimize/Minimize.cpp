@@ -433,7 +433,7 @@ void MinimizeMealy(const std::string& inFileName, const std::string& outFileName
 		currSize = newMapOfGroups.size();
 		prevSize = mapOfGroups.size();
 
-		if (currSize == prevSize)
+		if (currSize == prevSize || currSize == mealy.statesWithTransitions.size())
 		{
 			finalMultimap = newMultimap;
 			finalMapOfGroups = newMapOfGroups;
@@ -560,7 +560,7 @@ void MinimizeMoore(const std::string& inFileName, const std::string& outFileName
 		currSize = newMapOfGroups.size();
 		prevSize = mapOfGroups.size();
 
-		if (currSize == prevSize)
+		if (currSize == prevSize || currSize == moore.statesWithTransitions.size())
 		{
 			finalMultimap = newMultimap;
 			finalMapOfGroups = newMapOfGroups;
