@@ -37,7 +37,7 @@ def write_moore_machine_to_csv(moore_machine, file_name):
                             file.write(t + ',')
                         else:
                             file.write(t)
-                    if state != moore_machine["states_with_transitions"][len(moore_machine["states_with_transitions"]) - 1]["current_state"]:
+                    if state != moore_machine["states_with_transitions"][len(moore_machine["states_with_transitions"]) - 1]:
                         file.write(';')
                 file.write('\n')
     except FileNotFoundError:
