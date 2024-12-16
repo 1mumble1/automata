@@ -18,11 +18,13 @@ def write_moore_machine_to_csv(moore_machine, file_name):
     try:
         with open(file_name, 'w', encoding='utf-8') as file:
             for state in moore_machine["states_with_transitions"]:
-                file.write(';' + state["current_state"])
-            file.write('\n')
-            for state in moore_machine["states_with_transitions"]:
                 file.write(';' + state["out"])
             file.write('\n')
+
+            for state in moore_machine["states_with_transitions"]:
+                file.write(';' + state["current_state"])
+            file.write('\n')
+
             for entry in moore_machine["entries"]:
                 file.write(entry + ';')
                 for state in moore_machine["states_with_transitions"]:
