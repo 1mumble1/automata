@@ -91,6 +91,8 @@ def process_left_hand_grammar(gram):
     else:
         moore_machine["states_with_transitions"][0]["out"] = 'F'
 
+    moore_machine["states_with_transitions"].sort()
+
     return moore_machine
 
 
