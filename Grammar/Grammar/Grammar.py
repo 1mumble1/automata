@@ -92,7 +92,10 @@ def process_left_hand_grammar(gram):
 #        moore_machine["states_with_transitions"][0]["out"] = 'F'
 
     moore_machine["states_with_transitions"][0]["out"] = 'F'
-    moore_machine["states_with_transitions"].sort()
+    moore_machine["states_with_transitions"] = sorted(
+        moore_machine["states_with_transitions"], 
+        key=lambda x: x["current_state"]
+    )
 
     return moore_machine
 
