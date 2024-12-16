@@ -88,6 +88,8 @@ def process_left_hand_grammar(gram):
     for state in moore_machine["states_with_transitions"]:
         if not state["transitions"]:
             state["out"] = 'F'
+    else:
+        moore_machine["states_with_transitions"][0]["out"] = 'F'
 
     return moore_machine
 
