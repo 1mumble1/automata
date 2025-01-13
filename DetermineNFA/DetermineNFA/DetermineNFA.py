@@ -108,8 +108,9 @@ def determine(nfa):
 
         dfa["states_with_transitions"].append({"current_state": new_state_str, "out": out_str, "transitions": []})
         #print(transitions)
-        states = []
+        
         for t in transitions:
+            states = []
             for s in t["states"]:
                 for state in nfa["states_with_transitions"]:
                     if state["current_state"] == s:
