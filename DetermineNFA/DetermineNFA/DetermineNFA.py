@@ -77,12 +77,12 @@ def determine(nfa):
         if entry != 'ε':
             dfa["entries"].append(entry)
 
-    q = Queue()
+    q = []
     new_state = []
     new_state.append(nfa["states_with_transitions"][0])
-    q.put(new_state)
-    while not q.empty():
-        current_states = q.get()
+    q.append(new_state)
+    while q:
+        current_states = q.pop(0)
         # дополняем состояниями, достижимыми из данных только по эпсилон-переходам
         new_state = epsilon_closure(current_states, nfa)
 
@@ -125,11 +125,12 @@ def determine(nfa):
                 if state["current_state"] == possible_state_str:
                     break
             else:
-                q.put(possible_state)
+                if possible_state not in q:
+                    q.append(possible_state)
 
         dfa["states_with_transitions"][len(dfa["states_with_transitions"]) - 1]["transitions"] = transitions
     
-    print(dfa)
+    #print(dfa)
     return dfa
 
 
