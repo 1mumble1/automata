@@ -102,7 +102,7 @@ def determine(nfa):
                     for tr in transitions:
                         if tr["entry"] == t["entry"]:
                             tr["states"] = list(dict.fromkeys(chain(tr["states"], t["states"])))
-                        break
+                            break
                     else:
                         transitions.append({"entry": t["entry"], "states": t["states"]})
 
