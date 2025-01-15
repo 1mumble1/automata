@@ -195,7 +195,8 @@ def get_transits(start):
         for child in state.children:
             transitions[state.state].append({"entry": child["entry"], "states": []})
             for c in child["states"]:
-                transitions[state.state][len(transitions[state.state]) - 1]["states"].append(c.state)
+                if c.state not in transitions[state.state][len(transitions[state.state]) - 1]["states"]:
+                    transitions[state.state][len(transitions[state.state]) - 1]["states"].append(c.state) 
                 if c.state not in states and c not in q:
                     q.append(c)
 
