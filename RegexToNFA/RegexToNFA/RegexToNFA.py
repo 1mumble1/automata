@@ -118,35 +118,34 @@ def add_child(entry, father, child, alphabet):
     else:
         father.children.append({"entry": entry, "states": [child]})
 
-def new_state(counter):
+counter = 0
+def new_state():
+    global counter
     counter += 1
-    return Graph(f"q{counter}"), counter
+    return Graph(f"q{counter}")
 
-def build_nfa_from_tree(parse_tree_root, start, finite, alphabet, counter):
+def build_nfa_from_tree(parse_tree_root, start, finite, alphabet):
     if parse_tree_root.value.isalnum():
         add_child(parse_tree_root.value, start, finite, alphabet)
 
         return
 
     elif parse_tree_root.value == '.':
-        new_start, counter = new_state(counter)
-        new_finite, counter = new_state(counter)
+        another_state = new_state()
 
-        build_nfa_from_tree(parse_tree_root.left, start, new_start, alphabet, counter)
-        build_nfa_from_tree(parse_tree_root.right, new_finite, finite, alphabet, counter)
-
-        add_child('ε', new_start, new_finite, alphabet)
+        build_nfa_from_tree(parse_tree_root.left, start, another_state, alphabet)
+        build_nfa_from_tree(parse_tree_root.right, another_state, finite, alphabet)
 
         return
 
     elif parse_tree_root.value == '|':
-        new_start_left, counter = new_state(counter)
-        new_finite_left, counter = new_state(counter)
-        new_start_right, counter = new_state(counter)
-        new_finite_right, counter = new_state(counter)
+        new_start_left = new_state()
+        new_finite_left = new_state()
+        new_start_right = new_state()
+        new_finite_right = new_state()
 
-        build_nfa_from_tree(parse_tree_root.left, new_start_left, new_finite_left, alphabet, counter)
-        build_nfa_from_tree(parse_tree_root.right, new_start_right, new_finite_right, alphabet, counter)
+        build_nfa_from_tree(parse_tree_root.left, new_start_left, new_finite_left, alphabet)
+        build_nfa_from_tree(parse_tree_root.right, new_start_right, new_finite_right, alphabet)
 
         add_child('ε', start, new_start_left, alphabet)
         add_child('ε', start, new_start_right, alphabet)
@@ -156,23 +155,23 @@ def build_nfa_from_tree(parse_tree_root, start, finite, alphabet, counter):
         return
 
     elif parse_tree_root.value == '*':
-        new_start, counter = new_state(counter)
-        new_finite, counter = new_state(counter)
+        new_start = new_state()
+        new_finite = new_state()
 
-        build_nfa_from_tree(parse_tree_root.left, new_start, new_finite, alphabet, counter)
+        build_nfa_from_tree(parse_tree_root.left, new_start, new_finite, alphabet)
 
         add_child('ε', start, new_start, alphabet)
         add_child('ε', new_finite, finite, alphabet)
         add_child('ε', new_finite, new_start, alphabet)
-        add_child('ε', start, finite, alphabet)
+        add_child('ε', new_start, new_finite, alphabet)
 
         return
 
     elif parse_tree_root.value == '+':
-        new_start, counter = new_state(counter)
-        new_finite, counter = new_state(counter)
+        new_start = new_state()
+        new_finite = new_state()
 
-        build_nfa_from_tree(parse_tree_root.left, new_start, new_finite, alphabet, counter)
+        build_nfa_from_tree(parse_tree_root.left, new_start, new_finite, alphabet)
 
         add_child('ε', start, new_start, alphabet)
         add_child('ε', new_finite, finite, alphabet)
@@ -257,9 +256,8 @@ def process_regex(output_file_name, regex):
 
     start, finite = Graph("q0"), Graph("qF")
     alphabet = []
-    counter = 0
 
-    build_nfa_from_tree(tree, start, finite, alphabet, counter)
+    build_nfa_from_tree(tree, start, finite, alphabet)
 
     nfa = build_table_nfa(start, finite, alphabet)
 
@@ -278,4 +276,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
