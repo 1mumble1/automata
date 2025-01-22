@@ -103,7 +103,7 @@ class PascalLexer:
                         float_part = self.read_while(lambda c: c not in self.separators)
                         if not float_part:
                             return Token("BAD", lexeme + '.', self.line, start_col + 1)
-                        if self.peek(0) in {'+', '-'}:
+                        if self.peek(0) in {'+', '-'} and float_part[len(float_part) - 1] in {'e', 'E'}:
                             sign = self.peek(0)
                             self.column += 1
                             range_of_exp = self.read_while(lambda c: c not in self.separators)
