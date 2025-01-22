@@ -1,12 +1,24 @@
-program example1;
+program example;
 var
-Â Â x:Â integer;
-Â Â str:Â array[1..10]Â ofÂ integer;
+  x: inTeger;
+  str: array[1..10] of integer;
 begin
-Â Â //Â InitializeÂ x
-Â Â xÂ :=Â 42;
-Â Â {ThisÂ isÂ aÂ blockÂ comment}
-Â Â str[1]Â :=Â xÂ +Â 3.14
-end.
-// Ð·Ð°Ñ€Ð°Ð·Ð°
+  // Initialize x :+
+  x := 110.1e-89;
+  ch := 'abc;
+  {This is a 
 
+
+
+
+
+block comment}
+123.abcd
+  if1 = var1 +- elseend
+  x <> 0
+  then
+    x = 42213457689087656432578876543245678907654 - 10
+  else
+    x = 22 + 10
+  str[1] := (x + 3.14);
+end.
