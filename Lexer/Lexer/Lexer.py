@@ -20,7 +20,7 @@ class PascalLexer:
         self.keywords = {"array", "begin", "else", "end", "if", "of", "or",
                          "program", "procedure", "then", "type", "var"}
         self.operators = {"*", "+", "-", "/", ";", ",", "(", ")", "[", "]", "=", ">", "<", "<=", ">=", "<>", ":", ":=", "."}
-        self.separators = {"\"", "(", ")", "+", "-", "\t", "\n", " ", ";", ",", ".", "[", "]", "{", "}", "*", "/", "'", ":", ">", "<"}
+        self.separators = {"\"", "(", ")", "+", "-", "\t", "\n", " ", ";", ",", ".", "[", "]", "{", "}", "*", "/", "'", ":", ">", "<", "="}
 
     def next_token(self):
         while True:
