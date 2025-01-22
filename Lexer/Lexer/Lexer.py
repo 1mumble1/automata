@@ -55,7 +55,7 @@ class PascalLexer:
                         if self.column >= len(self.current_line):
                             self.current_line = self.file.readline()
                             if not self.current_line:
-                                return Token("BAD", block_comment, start_line, start_col)
+                                return Token("BAD", block_comment, start_line, start_col + 1)
                             self.line += 1
                             self.column = 0
                             continue
