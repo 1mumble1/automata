@@ -12,7 +12,7 @@
     <Name>Lexer</Name>
     <RootNamespace>Lexer</RootNamespace>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>"input.txt" "output.txt"</CommandLineArguments>
+    <CommandLineArguments>"src.txt" "output.txt"</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">

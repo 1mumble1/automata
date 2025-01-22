@@ -34,17 +34,17 @@ class PascalLexer:
             while self.column < len(self.current_line):
                 char = self.current_line[self.column]
 
-                # пропуск пробельных символов
+                # skip spaces
                 if char.isspace():
                     self.column += 1
                     continue
 
-                # пропуск линейных комментов
+                # skip line comments
                 if char == "/" and self.peek(1) == "/":
                     self.read_until("\n")
                     continue
 
-                # пропуск блочных комментов до }, иначе отправляем токен BAD
+                # skip block comment until }, else BAD
                 if char == "{":
                     is_valid_block_comment = False
                     block_comment = char
@@ -67,7 +67,7 @@ class PascalLexer:
                         if char == "}":
                             is_valid_block_comment = True
                 
-                # строковые литералы
+                # string
                 if char == "'":
                     start_col = self.column
                     lexeme = self.read_string()
@@ -75,7 +75,7 @@ class PascalLexer:
                         return Token("BAD", lexeme.strip("\n"), self.line, start_col + 1)
                     return Token("STRING", lexeme, self.line, start_col + 1)
 
-                # целые числа либо числа с плавающей точкой
+                # integer or float
                 if char.isdigit():
                     start_col = self.column
                     lexeme = self.read_while(lambda c: c not in self.separators)
@@ -103,7 +103,7 @@ class PascalLexer:
                         return Token("BAD", lexeme, self.line, start_col + 1)
                     return Token("INTEGER", lexeme, self.line, start_col + 1)
 
-                # идентификатор либо ключевое слово
+                # identifier or keyword
                 if char.isalpha() or char == "_":
                     start_col = self.column
                     lexeme = self.read_while(lambda c: c not in self.separators)
@@ -113,14 +113,14 @@ class PascalLexer:
                     token_type = lexeme.upper() if lexeme.lower() in self.keywords else "IDENTIFIER"
                     return Token(token_type, lexeme, self.line, start_col + 1)
 
-                # оператор
+                # operator
                 if char in self.operators:
                     start_col = self.column
                     lexeme = self.read_operator()
                     token_type = self.get_operator_type(lexeme)
                     return Token(token_type, lexeme, self.line, start_col + 1)
 
-                # ошибочная лексема
+                # BAD
                 start_col = self.column
                 bad_lexeme = self.read_while(lambda c: c not in self.separators)
                 return Token("BAD", bad_lexeme, self.line, start_col + 1)
@@ -128,14 +128,14 @@ class PascalLexer:
             self.current_line = ""
                   
 
-        #         # Ключевые слова и идентификаторы
+        #         
         #         if char.isalpha() or char == "_":
         #             start_col = self.column
         #             lexeme = self.read_while(lambda c: c.isalnum() or c == "_")
         #             token_type = lexeme.upper() if lexeme.lower() in self.keywords else "IDENTIFIER"
         #             return Token(token_type, lexeme, self.line, start_col + 1)
 
-        #         # Числа (целые и вещественные)
+        #         
         #         if char.isdigit():
         #             start_col = self.column
         #             lexeme = self.read_while(lambda c: c.isdigit() or c == ".")
@@ -157,19 +157,19 @@ class PascalLexer:
         #             token_type = "FLOAT" if "." in lexeme else "INTEGER"
         #             return Token(token_type, lexeme, self.line, start_col + 1)
 
-        #         # Операторы и знаки пунктуации
+        #         
         #         if char in self.operators:
         #             start_col = self.column
         #             lexeme = self.read_operator()
         #             token_type = self.get_operator_type(lexeme)
         #             return Token(token_type, lexeme, self.line, start_col + 1)
 
-        #         # Некорректные токены
+        #         
         #         start_col = self.column
         #         self.column += 1
         #         return Token("BAD", char, self.line, start_col + 1)
 
-        #     self.current_line = ""  # Переход к следующей строке
+        #     self.current_line = "" 
 
     def read_while(self, condition):
         start = self.column
@@ -194,18 +194,18 @@ class PascalLexer:
 
     def read_string(self):
         start = self.column
-        self.column += 1  # Пропустить начальную кавычку
+        self.column += 1
         while self.column < len(self.current_line) and self.current_line[self.column] != "'":
             self.column += 1
-        self.column += 1  # Пропустить конечную кавычку
+        self.column += 1
         return self.current_line[start:self.column]
 
     def read_until(self, end_char):
         start = self.column
-        self.column += 1  # Пропустить начальный символ комментария
+        self.column += 1 
         while self.column < len(self.current_line) and self.current_line[self.column] != end_char:
             self.column += 1
-        if self.column < len(self.current_line):  # Пропустить конечный символ комментария
+        if self.column < len(self.current_line):
             self.column += 1
         return self.current_line[start:self.column]
 
@@ -227,7 +227,7 @@ def main():
 
     lexer = PascalLexer(input_file)
 
-    with open(output_file, 'w') as output:
+    with open(output_file, 'w', encoding='utf-8') as output:
         while True:
             token = lexer.next_token()
             if token is None:
