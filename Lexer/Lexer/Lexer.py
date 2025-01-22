@@ -13,14 +13,14 @@ class Token:
 
 class PascalLexer:
     def __init__(self, filename):
-        self.file = open(filename, 'r')
+        self.file = open(filename, 'r', encoding='utf-8')
         self.line = 0
         self.column = 0
         self.current_line = ""
         self.keywords = {"array", "begin", "else", "end", "if", "of", "or",
                          "program", "procedure", "then", "type", "var"}
         self.operators = {"*", "+", "-", "/", ";", ",", "(", ")", "[", "]", "=", ">", "<", "<=", ">=", "<>", ":", ":=", "."}
-        self.separators = {"\"", "(", ")", "+", "-", "\t", "\n", " ", ";", ",", ".", "[", "]", "{", "}", "*", "/", "'", ":"}
+        self.separators = {"\"", "(", ")", "+", "-", "\t", "\n", " ", ";", ",", ".", "[", "]", "{", "}", "*", "/", "'", ":", ">", "<"}
 
     def next_token(self):
         while True:
@@ -66,6 +66,7 @@ class PascalLexer:
 
                         if char == "}":
                             is_valid_block_comment = True
+                    continue
                 
                 # string
                 if char == "'":
@@ -80,7 +81,23 @@ class PascalLexer:
                     start_col = self.column
                     lexeme = self.read_while(lambda c: c not in self.separators)
                     if not lexeme.isdigit():
-                        return Token("BAD", lexeme, self.line, start_col + 1)
+                        if not lexeme[:-1].isdigit():
+                            return Token("BAD", lexeme, self.line, start_col + 1)
+                        elif lexeme[len(lexeme) - 1] not in {'E', 'e'}:
+                            return Token("BAD", lexeme, self.line, start_col + 1)
+                        elif self.peek(0) in {'+', '-'} or self.peek(0).isdigit():
+                            sign = self.peek(0) if self.peek(0) in {'+', '-'} else ""
+                            self.column += 1
+                            range_of_exp = self.read_while(lambda c: c not in self.separators)
+                            if not range_of_exp:
+                                return Token("BAD", lexeme + '.' + float_part + sign, self.line, start_col + 1)
+                            lexeme += sign + range_of_exp
+
+                        match = re.fullmatch(r"\d+(\.\d+)?([eE][+-]?\d+)?", lexeme)
+                        if match:
+                            return Token("FLOAT", lexeme, self.line, start_col + 1)
+                        else:
+                            return Token("BAD", lexeme, self.line, start_col + 1)
                     if self.peek(0) == '.':
                         self.column += 1
                         float_part = self.read_while(lambda c: c not in self.separators)
@@ -111,6 +128,8 @@ class PascalLexer:
                     if not match:
                         return Token("BAD", lexeme, self.line, start_col + 1)
                     token_type = lexeme.upper() if lexeme.lower() in self.keywords else "IDENTIFIER"
+                    if token_type == "IDENTIFIER" and len(lexeme) > 256:
+                        return Token("BAD", lexeme, self.line, start_col + 1)
                     return Token(token_type, lexeme, self.line, start_col + 1)
 
                 # operator
